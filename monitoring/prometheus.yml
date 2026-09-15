@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: safetyvision
+    static_configs:
+      - targets: ["safetyvision:8000"]
