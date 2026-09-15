@@ -8,6 +8,7 @@ import torch
 
 from .config import Settings
 from .contracts import Detection
+from .postprocess import filter_detections
 
 
 class Detector:
@@ -27,8 +28,21 @@ class Detector:
         output = self.model(tensor)
         rows = output[0] if isinstance(output, (tuple, list)) else output
         detections: list[Detection] = []
-        for row in rows.detach().cpu().numpy().tolist():
+        for row in filter_detections(
+            rows.detach().cpu().numpy(),
+            self.settings.confidence_threshold,
+            self.settings.iou_threshold,
+        ):
             if len(row) < 6 or row[4] < self.settings.confidence_threshold:
                 continue
-            detections.append(Detection(label=str(int(row[5])), confidence=float(row[4]), x1=row[0], y1=row[1], x2=row[2], y2=row[3]))
+            detections.append(
+                Detection(
+                    label=str(int(row[5])),
+                    confidence=float(row[4]),
+                    x1=row[0],
+                    y1=row[1],
+                    x2=row[2],
+                    y2=row[3],
+                )
+            )
         return detections

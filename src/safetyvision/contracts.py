@@ -16,7 +16,7 @@ class PredictionResponse(BaseModel):
     request_id: str
     model_version: str
     detections: list[Detection]
-    safety_status: Literal["clear", "warning"]
+    safety_status: Literal["unknown", "review"]
     latency_ms: float = Field(ge=0)
 
 

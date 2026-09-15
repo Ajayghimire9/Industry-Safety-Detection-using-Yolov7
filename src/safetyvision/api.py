@@ -10,7 +10,7 @@ from prometheus_client import make_asgi_app
 from .config import Settings
 from .contracts import HealthResponse, PredictionResponse
 from .inference import Detector
-from .monitoring import ERRORS, LATENCY, REQUESTS, DETECTIONS
+from .monitoring import DETECTIONS, ERRORS, LATENCY, REQUESTS
 from .validation import InputValidationError, validate_upload
 
 settings = Settings()
@@ -27,7 +27,11 @@ app.mount("/metrics", make_asgi_app())
 
 @app.get("/health", response_model=HealthResponse)
 def health():
-    return HealthResponse(status="ok" if detector else "degraded", model_version=settings.model_version, model_loaded=detector is not None)
+    return HealthResponse(
+        status="ok" if detector else "degraded",
+        model_version=settings.model_version,
+        model_loaded=detector is not None,
+    )
 
 
 @app.get("/ready")
@@ -38,11 +42,11 @@ def ready():
 
 
 @app.post("/v1/predict", response_model=PredictionResponse)
-async def predict(file: UploadFile = File(...)):
+async def predict(file: UploadFile = File(...)):  # noqa: B008 - FastAPI request marker
     request_id = str(uuid.uuid4())
     started = time.perf_counter()
     REQUESTS.inc()
-    payload = await file.read()
+    payload = await file.read(settings.max_upload_bytes + 1)
     try:
         validate_upload(file.filename or "image.jpg", payload, settings)
         if detector is None:
@@ -58,4 +62,10 @@ async def predict(file: UploadFile = File(...)):
         DETECTIONS.labels(item.label).inc()
     elapsed = time.perf_counter() - started
     LATENCY.observe(elapsed)
-    return PredictionResponse(request_id=request_id, model_version=settings.model_version, detections=detections, safety_status="warning" if detections else "clear", latency_ms=elapsed * 1000)
+    return PredictionResponse(
+        request_id=request_id,
+        model_version=settings.model_version,
+        detections=detections,
+        safety_status="review" if detections else "unknown",
+        latency_ms=elapsed * 1000,
+    )

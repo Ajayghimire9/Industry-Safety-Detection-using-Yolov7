@@ -159,3 +159,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 artifacts/*
+
+# Local development and generated outputs
+.ruff_cache/
+.venv/
+artifacts/
+mlruns/
+mlflow.db

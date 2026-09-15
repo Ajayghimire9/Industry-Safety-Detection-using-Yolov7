@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import subprocess
-from pathlib import Path
 
 import mlflow
 
@@ -21,6 +19,7 @@ def run_training(command: str, run_name: str = "safetyvision-training") -> None:
 
 def register_artifact(weights: str, metrics: dict, output: str) -> None:
     from .registry import create_manifest
+
     create_manifest(weights, metrics, output)
 
 
