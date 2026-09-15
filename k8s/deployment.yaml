@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: safetyvision
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: safetyvision
+  template:
+    metadata:
+      labels:
+        app: safetyvision
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/ajayghimire9/safetyvision:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: SAFETYVISION_WEIGHTS
+              value: /models/model.ts
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: safetyvision
+spec:
+  selector:
+    app: safetyvision
+  ports:
+    - port: 80
+      targetPort: 8000
